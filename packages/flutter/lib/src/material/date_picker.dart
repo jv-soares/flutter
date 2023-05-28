@@ -1031,6 +1031,7 @@ Future<DateTimeRange?> showDateRangePicker({
   TextInputType keyboardType = TextInputType.datetime,
   final Icon? switchToInputEntryModeIcon,
   final Icon? switchToCalendarEntryModeIcon,
+  SelectableDayPredicate? selectableDayPredicate,
 }) async {
   assert(
     initialDateRange == null || !initialDateRange.start.isAfter(initialDateRange.end),
@@ -1082,6 +1083,7 @@ Future<DateTimeRange?> showDateRangePicker({
     keyboardType: keyboardType,
     switchToInputEntryModeIcon: switchToInputEntryModeIcon,
     switchToCalendarEntryModeIcon: switchToCalendarEntryModeIcon,
+    selectableDayPredicate: selectableDayPredicate,
   );
 
   if (textDirection != null) {
@@ -1172,6 +1174,7 @@ class DateRangePickerDialog extends StatefulWidget {
     this.restorationId,
     this.switchToInputEntryModeIcon,
     this.switchToCalendarEntryModeIcon,
+    this.selectableDayPredicate,
   });
 
   /// The date range that the date range picker starts with when it opens.
@@ -1299,6 +1302,8 @@ class DateRangePickerDialog extends StatefulWidget {
 
   /// {@macro flutter.material.date_picker.switchToCalendarEntryModeIcon}
   final Icon? switchToCalendarEntryModeIcon;
+
+  final SelectableDayPredicate? selectableDayPredicate;
 
   @override
   State<DateRangePickerDialog> createState() => _DateRangePickerDialogState();
@@ -1438,6 +1443,7 @@ class _DateRangePickerDialogState extends State<DateRangePickerDialog> with Rest
               ? localizations.dateRangePickerHelpText
               : localizations.dateRangePickerHelpText.toUpperCase()
             ),
+          selectableDayPredicate: widget.selectableDayPredicate,
         );
         size = MediaQuery.sizeOf(context);
         insetPadding = EdgeInsets.zero;
@@ -1563,6 +1569,7 @@ class _CalendarRangePickerDialog extends StatelessWidget {
     required this.confirmText,
     required this.helpText,
     this.entryModeButton,
+    this.selectableDayPredicate,
   });
 
   final DateTime? selectedStartDate;
@@ -1577,6 +1584,7 @@ class _CalendarRangePickerDialog extends StatelessWidget {
   final String confirmText;
   final String helpText;
   final Widget? entryModeButton;
+  final SelectableDayPredicate? selectableDayPredicate;
 
   @override
   Widget build(BuildContext context) {
@@ -1688,6 +1696,7 @@ class _CalendarRangePickerDialog extends StatelessWidget {
           currentDate: currentDate,
           onStartDateChanged: onStartDateChanged,
           onEndDateChanged: onEndDateChanged,
+          selectableDayPredicate: selectableDayPredicate,
         ),
       ),
     );
@@ -1716,6 +1725,7 @@ class _CalendarDateRangePicker extends StatefulWidget {
     DateTime? currentDate,
     required this.onStartDateChanged,
     required this.onEndDateChanged,
+    this.selectableDayPredicate,
   }) : initialStartDate = initialStartDate != null ? DateUtils.dateOnly(initialStartDate) : null,
        initialEndDate = initialEndDate != null ? DateUtils.dateOnly(initialEndDate) : null,
        firstDate = DateUtils.dateOnly(firstDate),
@@ -1751,6 +1761,8 @@ class _CalendarDateRangePicker extends StatefulWidget {
 
   /// Called when the user changes the end date of the selected range.
   final ValueChanged<DateTime?>? onEndDateChanged;
+
+  final SelectableDayPredicate? selectableDayPredicate;
 
   @override
   _CalendarDateRangePickerState createState() => _CalendarDateRangePickerState();
@@ -1856,6 +1868,7 @@ class _CalendarDateRangePickerState extends State<_CalendarDateRangePicker> {
       lastDate: widget.lastDate,
       displayedMonth: month,
       onChanged: _updateSelection,
+      selectableDayPredicate: widget.selectableDayPredicate,
     );
   }
 
@@ -2249,6 +2262,7 @@ class _MonthItem extends StatefulWidget {
     required this.firstDate,
     required this.lastDate,
     required this.displayedMonth,
+    this.selectableDayPredicate,
   }) : assert(!firstDate.isAfter(lastDate)),
        assert(selectedDateStart == null || !selectedDateStart.isBefore(firstDate)),
        assert(selectedDateEnd == null || !selectedDateEnd.isBefore(firstDate)),
@@ -2280,6 +2294,8 @@ class _MonthItem extends StatefulWidget {
 
   /// The month whose days are displayed by this picker.
   final DateTime displayedMonth;
+
+  final SelectableDayPredicate? selectableDayPredicate;
 
   @override
   _MonthItemState createState() => _MonthItemState();
@@ -2354,7 +2370,10 @@ class _MonthItemState extends State<_MonthItem> {
     final Color highlightColor = _highlightColor(context);
     final int day = dayToBuild.day;
 
-    final bool isDisabled = dayToBuild.isAfter(widget.lastDate) || dayToBuild.isBefore(widget.firstDate);
+    bool isDisabled = dayToBuild.isAfter(widget.lastDate) || dayToBuild.isBefore(widget.firstDate);
+    if (widget.selectableDayPredicate != null) {
+      isDisabled = !widget.selectableDayPredicate!(dayToBuild);
+    }
 
     BoxDecoration? decoration;
     TextStyle? itemStyle = textTheme.bodyMedium;
